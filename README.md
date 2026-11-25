@@ -1,12 +1,6 @@
 # Calculadora CBS/IBS por XML
 
-Site estático: o cliente envia o XML (NF-e, NFC-e, NFS-e nacional, CT-e) e vê CBS, IBS, reduções e a validação de NCM/NBS.
-
-## Publicar (uma vez)
-1. Crie um repositório no GitHub e envie todo o conteúdo desta pasta (inclusive `.github` e `data`).
-2. Em **Settings → Pages**, escolha a branch `main`, pasta `/ (root)`.
-3. Em **Actions**, abra "Atualizar tabelas da Receita" e clique em **Run workflow** para a primeira carga.
-4. O link do site fica em Settings → Pages. É esse o link que vai para os clientes.
+o cliente envia o XML (NF-e, NFC-e, NFS-e nacional, CT-e) e vê CBS, IBS, reduções e a validação de NCM/NBS.
 
 ## Atualização diária
 `.github/workflows/atualizar-dados.yml` roda todo dia às 6h (Brasília), executa `scripts/atualizar-dados.mjs`
