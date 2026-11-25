@@ -110,11 +110,29 @@ function parse(xml,name){
       itens:[{n:1,cod:"",desc:"Serviço de transporte",qtd:1,un:"UN",bruto:N(T(cte,"vPrest"),"vTPrest"),imp:0,cst:V(T(cte,"IBSCBS"),"CST")||"000",cc:V(T(cte,"IBSCBS"),"cClassTrib")||"000001"}]};
   }
   if(nfs){
-    const mun=+(V(nfs,"cLocIncid")||V(nfs,"cLocPrestacao")||V(nfs,"cMun"));
-    return{...base,tp:91,nf:V(nfs,"nNFSe")||V(nfs,"nDPS"),uf:UFS[String(mun).slice(0,2)],mun,
-      dh:V(nfs,"dhEmi")||V(nfs,"dhProc")||V(nfs,"dCompet")+"T12:00:00-03:00",
-      itens:[{n:1,cod:V(nfs,"cNBS").replace(/\D/g,""),desc:V(nfs,"xDescServ"),qtd:1,un:"UN",bruto:N(T(nfs,"vServPrest"),"vServ"),imp:N(nfs,"vISSQN")+(N(nfs,"vPis")||N(nfs,"vPIS"))+N(nfs,"vCofins"),
-        cst:V(T(nfs,"IBSCBS"),"CST")||"000",cc:V(T(nfs,"IBSCBS"),"cClassTrib")||"000001"}]};
+    // Na NFS-e padrão nacional, a classificação pode estar aninhada
+    // em DPS/infDPS/IBSCBS/valores/trib/gIBSCBS.
+    const dps=T(d,"infDPS")||T(nfs,"infDPS")||nfs;
+    const ibscbs=T(dps,"IBSCBS")||T(nfs,"IBSCBS")||T(d,"IBSCBS");
+    const gTrib=T(dps,"gIBSCBS")||T(ibscbs,"gIBSCBS")||ibscbs;
+    const mun=+(V(dps,"cLocIncid")||V(dps,"cLocPrestacao")||V(dps,"cLocEmi")||
+                V(nfs,"cLocIncid")||V(nfs,"cLocPrestacao")||V(nfs,"cMun"));
+    const numero=V(nfs,"nNFSe")||V(dps,"nDPS")||V(nfs,"nDPS");
+    const data=V(dps,"dhEmi")||V(nfs,"dhEmi")||V(nfs,"dhProc")||V(dps,"dCompet")||V(nfs,"dCompet");
+    const grupoServ=T(dps,"vServPrest")||T(nfs,"vServPrest");
+    const grupoValores=T(dps,"valores")||T(nfs,"valores");
+    const vServ=N(grupoServ,"vServ")||N(grupoValores,"vServ");
+    const cst=V(gTrib,"CST")||V(ibscbs,"CST")||"000";
+    const cc=V(gTrib,"cClassTrib")||V(ibscbs,"cClassTrib")||"000001";
+    const impDps=N(dps,"vISSQN")+N(dps,"vPis")+N(dps,"vPIS")+N(dps,"vCofins");
+    const impNfse=N(nfs,"vISSQN")+N(nfs,"vPis")+N(nfs,"vPIS")+N(nfs,"vCofins");
+    return{...base,tp:91,nf:numero,uf:UFS[String(mun).slice(0,2)],mun,
+      dh:data.includes("T")?data:data+"T12:00:00-03:00",
+      itens:[{n:1,cod:(V(dps,"cNBS")||V(nfs,"cNBS")).replace(/\D/g,""),
+        desc:V(dps,"xDescServ")||V(nfs,"xDescServ"),qtd:1,un:"UN",
+        bruto:vServ||N(grupoServ,"vServPrest"),
+        imp:impDps||impNfse,
+        cst,cc}]};
   }
   throw new Error("tipo de documento ainda não suportado (BP-e, NF3e, NFCom…)");
 }
