@@ -5,10 +5,12 @@ O GitHub Pages não executa código de servidor. Para contornar CORS, este proje
 ## 1. Publicar o Worker
 
 1. Crie uma conta gratuita no Cloudflare, se ainda não tiver uma.
+
+   **Origem autorizada deste projeto:** `https://marian4f.github.io` (não inclua `/Calculadora-CBS/`).
 2. Abra **Workers & Pages** e crie um Worker chamado `calculadora-cbs-api`.
 3. Copie todo o conteúdo de `cloudflare-worker/worker.js` para o editor do Worker e publique (`Deploy`).
 4. Anote o endereço publicado, por exemplo `https://calculadora-cbs-api.SEUSUBDOMINIO.workers.dev`.
-5. Em **Settings > Variables and Secrets**, configure a variável `ALLOWED_ORIGIN` com a origem exata do seu GitHub Pages, por exemplo `https://SEU-USUARIO.github.io`. Se usar domínio personalizado, informe a origem dele (`https://seudominio.com`), sem caminho final.
+5. Em **Settings > Variables and Secrets**, crie a variável `ALLOWED_ORIGIN` com o valor exato `https://marian4f.github.io`. Não inclua `/Calculadora-CBS/` nem barra no final. O Worker recusa requisições se essa variável não estiver configurada.
 
 ## 2. Apontar a calculadora para o Worker
 
@@ -40,3 +42,8 @@ Faça commit e aguarde a publicação do GitHub Pages.
 - A API oficial é um ambiente piloto/externo. O Worker resolve o caminho de CORS, mas não garante disponibilidade ou estabilidade da API da Receita.
 - A validação de XML também passa pelo Worker.
 - Se o domínio do GitHub Pages mudar, atualize `ALLOWED_ORIGIN`.
+
+
+## Configuração específica do GitHub Pages da Mariana
+
+O site informado está em `https://marian4f.github.io/Calculadora-CBS/`. Para CORS, a origem correta é somente `https://marian4f.github.io`; o caminho `/Calculadora-CBS/` não entra na variável `ALLOWED_ORIGIN`.
