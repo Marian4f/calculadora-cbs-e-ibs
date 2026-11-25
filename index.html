@@ -79,6 +79,7 @@ async function apiFetch(path, options={}){
 }
 const $=id=>document.getElementById(id);
 const brl=n=>(Number(n)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const pct=n=>n===undefined||n===null||n===""?"–":(Number(n)||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:4})+"%";
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const UFS={11:"RO",12:"AC",13:"AM",14:"RR",15:"PA",16:"AP",17:"TO",21:"MA",22:"PI",23:"CE",24:"RN",25:"PB",26:"PE",27:"AL",28:"SE",29:"BA",31:"MG",32:"ES",33:"RJ",35:"SP",41:"PR",42:"SC",43:"RS",50:"MS",51:"MT",52:"GO",53:"DF"};
 const TIPO={55:["NF-e","nfe"],65:["NFC-e","nfce"],57:["CT-e","cte"],91:["NFS-e","nfse"]};
@@ -174,7 +175,7 @@ window.hLimpa=async()=>{if(confirm("Apagar todo o histórico deste navegador?"))
 async function calc(){
   $("go").disabled=true;$("msg").textContent="Calculando…";const ded=$("ded").checked;
   for(const d of docs){
-    d.err=null;d.geral=[];d.itens.forEach(i=>{i.erros=[];i.alertas=[];i.cbs=i.ibs=i.red=undefined});
+    d.err=null;d.geral=[];d.itens.forEach(i=>{i.erros=[];i.alertas=[];i.cbs=i.ibs=i.red=i.aliqCBS=i.aliqIBSUF=i.aliqIBSMun=undefined});
     const mk=its=>({id:"sim-"+d.nf+"-"+Date.now(),versao:"1.0.0",tpDoc:d.tp,dhFatoGerador:d.dh,municipio:d.mun,uf:d.uf,
       itens:its.map(i=>({numero:i.n,...(d.tp===91?{nbs:i.cod}:i.cod?{ncm:i.cod}:{}),quantidade:i.qtd,unidade:i.un,cst:i.cst,cClassTrib:i.cc,
         baseCalculo:+baseOf(d,i).toFixed(2)}))});
@@ -192,7 +193,7 @@ async function calc(){
         if(!r.ok)throw new Error(r.j.detail||r.j.title||"Erro "+r.s);
         d.raw=r.j;const objs=r.j.objetos||[];
         ok.forEach(i=>{const x=objs.find(y=>y.nObj===i.n)||{};
-          i.cbs=+find(x,"vCBS")||0;i.ibs=+find(x,"vIBS")||((+find(x,"vIBSUF")||0)+(+find(x,"vIBSMun")||0));i.red=find(x,"pRedAliq")});
+          i.cbs=+find(x,"vCBS")||0;i.ibs=+find(x,"vIBS")||((+find(x,"vIBSUF")||0)+(+find(x,"vIBSMun")||0));i.aliqCBS=find(x,"pCBS");i.aliqIBSUF=find(x,"pIBSUF");i.aliqIBSMun=find(x,"pIBSMun");i.red=find(x,"pRedAliq")});
       }
     }catch(e){d.err=e.message+" (se for erro de rede/CORS, use um servidor intermediário)"}
   }
@@ -219,18 +220,18 @@ function render(){
       return`<tr><td>${i.n}</td><td title="${esc(i.desc)}">${esc(i.cod)||"–"}</td><td class="n">${brl(baseOf(d,i))}</td>
       <td><input value="${esc(i.cst)}" style="width:50px" onchange="chg(${a},${b},'cst',this.value)"></td>
       <td><input value="${esc(i.cc)}" list="cl" onchange="chg(${a},${b},'cc',this.value)"></td><td class="d">${esc(CL[i.cc]?.d)}</td>
-      <td class="n">${i.cbs!==undefined?brl(i.cbs):"–"}</td><td class="n">${i.ibs!==undefined?brl(i.ibs):"–"}</td><td>${i.red!==undefined?esc(i.red)+"%":"–"}</td>${st}</tr>`}).join("");
+      <td class="n">${pct(i.aliqCBS)}</td><td class="n">${pct(i.aliqIBSUF)}</td><td class="n">${pct(i.aliqIBSMun)}</td><td class="n">${i.cbs!==undefined?brl(i.cbs):"–"}</td><td class="n">${i.ibs!==undefined?brl(i.ibs):"–"}</td><td>${i.red!==undefined?esc(i.red)+"%":"–"}</td>${st}</tr>`}).join("");
     return`<div class="card"><b>${TIPO[d.tp][0]} ${esc(d.nf)}</b><span class="tag">${esc(d.uf)} · mun. ${d.mun}</span><span class="note"> ${esc(d.name)}</span>
      ${d.err?`<p class="er">${esc(d.err)}</p>`:""}${d.geral?.length?`<p class="er">${d.geral.map(e=>esc(e.detail||e.title)).join("<br>")}</p>`:""}
-     <div class="tw"><table><thead><tr><th>Item</th><th>${d.tp===91?"NBS":"NCM"}</th><th class="n">Base</th><th>CST</th><th>cClassTrib</th><th>Tributação</th><th class="n">CBS</th><th class="n">IBS</th><th>Redução</th><th>Validação</th></tr></thead><tbody>${rows}</tbody></table></div>
+     <div class="tw"><table><thead><tr><th>Item</th><th>${d.tp===91?"NBS":"NCM"}</th><th class="n">Base</th><th>CST</th><th>cClassTrib</th><th>Tributação</th><th class="n">Alíquota CBS</th><th class="n">Alíquota IBS UF</th><th class="n">Alíquota IBS Município</th><th class="n">Valor CBS</th><th class="n">Valor IBS</th><th>Redução</th><th>Validação</th></tr></thead><tbody>${rows}</tbody></table></div>
      <div class="bar"><button onclick="valida(${a})">Validar preenchimento do XML</button></div><pre id="v${a}" hidden></pre>
      ${d.raw?`<details><summary>Memória de cálculo (JSON)</summary><pre>${esc(JSON.stringify(d.raw,null,2))}</pre></details>`:""}</div>`}).join("");
   document.querySelectorAll("pre[id^=v]").forEach(p=>{const o=new MutationObserver(()=>p.hidden=!p.textContent);o.observe(p,{childList:true})});
 }
 
 $("csv").onclick=()=>{
-  const l=[["Tipo","Numero","Item","NCM/NBS","Base","CST","cClassTrib","CBS","IBS","Validacao"]];
-  docs.forEach(d=>d.itens.forEach(i=>l.push([TIPO[d.tp][0],d.nf,i.n,i.cod,baseOf(d,i).toFixed(2),i.cst,i.cc,(i.cbs||0).toFixed(2),(i.ibs||0).toFixed(2),(i.erros||[]).map(e=>e.detail||e.title).join(" | ")||"OK"])));
+  const l=[["Tipo","Numero","Item","NCM/NBS","Base","CST","cClassTrib","Aliquota CBS (%)","Aliquota IBS UF (%)","Aliquota IBS Municipio (%)","Valor CBS","Valor IBS","Validacao"]];
+  docs.forEach(d=>d.itens.forEach(i=>l.push([TIPO[d.tp][0],d.nf,i.n,i.cod,baseOf(d,i).toFixed(2),i.cst,i.cc,i.aliqCBS??"",i.aliqIBSUF??"",i.aliqIBSMun??"",(i.cbs||0).toFixed(2),(i.ibs||0).toFixed(2),(i.erros||[]).map(e=>e.detail||e.title).join(" | ")||"OK"])));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+l.map(r=>r.join(";")).join("\n")],{type:"text/csv"}));a.download="cbs-ibs.csv";a.click();
 };
 renderHist();
