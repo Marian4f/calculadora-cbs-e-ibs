@@ -4,9 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulador CBS e IBS</title>
+<script>try{var t=localStorage.getItem("tema");if(t&&t!=="auto")document.documentElement.dataset.tema=t}catch(e){}</script>
 <style>
 :root{--bg:#070d17;--side:#0a111d;--card:#0d1625;--line:#1a2538;--tx:#e6ebf3;--mut:#8a97ab;--ac:#2dd4a0;--acx:#062b20;--err:#f87171;--warn:#fbbf24}
-@media(prefers-color-scheme:light){:root{--bg:#f4f6fa;--side:#fff;--card:#fff;--line:#dfe4ec;--tx:#101827;--mut:#5b6678;--ac:#0f9f78;--acx:#fff;--err:#c62828;--warn:#b45309}}
+:root{color-scheme:dark}
+@media(prefers-color-scheme:light){:root:not([data-tema]){color-scheme:light;--bg:#f4f6fa;--side:#fff;--card:#fff;--line:#dfe4ec;--tx:#101827;--mut:#5b6678;--ac:#0f9f78;--acx:#fff;--err:#c62828;--warn:#b45309}}
+:root[data-tema="claro"]{color-scheme:light;--bg:#f4f6fa;--side:#fff;--card:#fff;--line:#dfe4ec;--tx:#101827;--mut:#5b6678;--ac:#0f9f78;--acx:#fff;--err:#c62828;--warn:#b45309}
+:root[data-tema="escuro"]{color-scheme:dark;--bg:#070d17;--side:#0a111d;--card:#0d1625;--line:#1a2538;--tx:#e6ebf3;--mut:#8a97ab;--ac:#2dd4a0;--acx:#062b20;--err:#f87171;--warn:#fbbf24}
 *{box-sizing:border-box}html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,Segoe UI,Arial,sans-serif;display:flex}
 aside{width:220px;background:var(--side);border-right:1px solid var(--line);padding:18px 14px;flex:none}
@@ -27,6 +31,7 @@ th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;white-
 input[type=text],input:not([type]){padding:5px 7px;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:6px;font:inherit;width:90px}
 .tag{display:inline-block;padding:1px 8px;border-radius:99px;background:#8a97ab26;font-size:12px;margin-left:6px}
 .ok{color:var(--ac)}.er{color:var(--err);white-space:normal;min-width:240px}.wr{color:var(--warn);white-space:normal;min-width:200px}.d{color:var(--mut);white-space:normal;min-width:160px;font-size:12px}
+.tema{display:flex;justify-content:flex-end;gap:4px;margin-bottom:6px}.tema button{padding:5px 11px;font-size:12px}.tema button.on{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
 .note{color:var(--mut);font-size:12px}label.c{display:flex;gap:6px;align-items:center;color:var(--mut)}
 details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;max-height:240px;font-size:12px}
 @media(max-width:760px){aside{display:none}main{padding:14px}}
@@ -36,6 +41,7 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
 <aside><div class="brand"><div class="logo">R</div><div><b>Simulador</b><small>CBS e IBS</small></div></div>
 <div class="sec">MOVIMENTO</div><div class="nav">Calcular por XML</div></aside>
 <main>
+<div class="tema" id="tema" role="group" aria-label="Tema"><button data-t="auto">Auto</button><button data-t="escuro">Escuro</button><button data-t="claro">Claro</button></div>
 <h1>Calcular CBS e IBS pelo XML</h1>
 <p class="sub">1. Envie os XMLs · 2. Clique em Calcular · 3. Confira valores, reduções e validação de cada item.</p>
 
@@ -51,7 +57,7 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
   <datalist id="cl"></datalist>
 </div>
 
-<div id="sum"></div><div id="out"></div>
+<div class="card" id="hist" hidden></div><div id="sum"></div><div id="out"></div>
 <details class="card"><summary><b>Fontes oficiais e atualização</b><span class="note" id="upd"></span></summary>
 <ul class="note">
 <li><a href="https://www2.camara.leg.br/legin/fed/leicom/2025/leicomplementar-214-16-janeiro-2025-796905-normaatualizada-pl.docx">LC 214/2025, texto atualizado</a> e <a href="https://www2.camara.leg.br/legin/fed/leicom/2026/leicomplementar-227-13-janeiro-2026-798657-publicacaooriginal-177770-pl.html">LC 227/2026</a></li>
@@ -59,7 +65,7 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
 <li><a href="https://consumo.tributos.gov.br">Portal do consumo (CBS/IBS)</a> · <a href="https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/reforma-consumo/orientacoes-2026">Orientações 2026 da Receita</a></li>
 <li><a href="https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica">Notas técnicas da NFS-e</a> · <a href="https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=04BIflQt1aY=">Notas técnicas da NF-e</a></li>
 </ul><p class="note">As tabelas oficiais são baixadas automaticamente todo dia, às 6h (horário de Brasília).</p></details>
-<p class="note">Os XMLs são lidos no seu navegador; só NCM/NBS, valores, UF e município seguem para a calculadora da Receita Federal (versão beta/piloto). Cálculo conforme a Lei Complementar 214/2025 (alterada pela LC 227/2026), com regras e tabelas da calculadora oficial da Receita Federal. Base de cálculo: valor da operação (art. 12), com frete, seguro, taxas e outras despesas, sem descontos incondicionais, IPI e IBS/CBS; o Imposto Seletivo integra a base. Resultado é estimativa e não substitui orientação fiscal. CST e cClassTrib vêm do XML quando existirem; senão usamos 000/000001 (tributação integral). Altere na tabela para simular benefícios e reduções.</p>
+<p class="note">Os XMLs são lidos no seu navegador e o histórico fica salvo só nele (você pode apagar quando quiser); só NCM/NBS, valores, UF e município seguem para a calculadora da Receita Federal (versão beta/piloto). Cálculo conforme a Lei Complementar 214/2025 (alterada pela LC 227/2026), com regras e tabelas da calculadora oficial da Receita Federal. Base de cálculo: valor da operação (art. 12), com frete, seguro, taxas e outras despesas, sem descontos incondicionais, IPI e IBS/CBS; o Imposto Seletivo integra a base. Resultado é estimativa e não substitui orientação fiscal. CST e cClassTrib vêm do XML quando existirem; senão usamos 000/000001 (tributação integral). Altere na tabela para simular benefícios e reduções.</p>
 </main>
 <script>
 // Se a API bloquear chamadas do navegador (CORS), aponte para o seu servidor intermediário.
@@ -138,6 +144,24 @@ async function post(p,b){const r=await fetch(API+p,{method:"POST",headers:{"Cont
 // LC 214/2025, art. 12: valor da operação (frete, seguro, taxas e outras despesas entram); não entram IPI, IBS/CBS e descontos incondicionais;
 // ICMS, ISS, PIS e Cofins saem da base de 2026 a 2032 (§2º, V); o Imposto Seletivo integra a base.
 function baseOf(d,i){const y=+String(d.dh).slice(0,4);return Math.max(i.bruto-(i.ipi||0)+(i.is||0)-($("ded").checked&&y<=2032?i.imp:0),0)}
+// ---- Histórico salvo no próprio navegador (IndexedDB); nada é enviado a servidor ----
+const DB=new Promise(res=>{try{const r=indexedDB.open("calc-cbs-ibs",1);r.onupgradeneeded=()=>r.result.createObjectStore("calculos",{keyPath:"id",autoIncrement:true});r.onsuccess=()=>res(r.result);r.onerror=()=>res(null)}catch{res(null)}});
+async function hStore(mode,fn){const db=await DB;if(!db)return;return new Promise(ok=>{try{const t=db.transaction("calculos",mode),q=fn(t.objectStore("calculos"));t.oncomplete=()=>ok(q?.result);t.onerror=()=>ok()}catch{ok()}})}
+async function hSave(d){try{const c=JSON.parse(JSON.stringify({...d,raw:undefined}));c.em=Date.now();if(d.hid)c.id=d.hid;else delete c.id;const k=await hStore("readwrite",s=>s.put(c));if(k)d.hid=k}catch{}}
+async function renderHist(){
+  const h=$("hist"),l=(await hStore("readonly",s=>s.getAll()))||[];
+  if(!l.length){h.hidden=true;return}
+  h.hidden=false;
+  h.innerHTML=`<details><summary><b>Histórico neste navegador</b> <span class="note">· ${l.length} nota(s) · só você vê, nada vai para servidor</span></summary>
+  <div class="tw"><table><thead><tr><th>Data</th><th>Tipo</th><th>Nº</th><th>Arquivo</th><th class="n">CBS</th><th class="n">IBS</th><th>Problemas</th><th></th></tr></thead><tbody>`+
+  l.sort((x,y)=>y.em-x.em).map(r=>{const c=r.itens.reduce((s,i)=>s+(i.cbs||0),0),b=r.itens.reduce((s,i)=>s+(i.ibs||0),0),p=r.itens.filter(i=>i.erros?.length).length;
+    return`<tr><td>${new Date(r.em).toLocaleString("pt-BR")}</td><td>${TIPO[r.tp]?.[0]||""}</td><td>${esc(r.nf)}</td><td>${esc(r.name)}</td><td class="n">${brl(c)}</td><td class="n">${brl(b)}</td><td>${p||"–"}</td><td><button onclick="hAbrir(${r.id})">Abrir</button> <button onclick="hDel(${r.id})">Excluir</button></td></tr>`}).join("")+
+  `</tbody></table></div><div class="bar"><button onclick="hLimpa()">Apagar todo o histórico</button></div></details>`;
+}
+window.hAbrir=async id=>{const r=await hStore("readonly",s=>s.get(id));if(!r)return;r.hid=r.id;docs=[r];$("go").disabled=false;$("csv").disabled=false;$("msg").textContent="Nota aberta do histórico.";render();document.querySelector("main").scrollTo(0,0)};
+window.hDel=async id=>{await hStore("readwrite",s=>s.delete(id));renderHist()};
+window.hLimpa=async()=>{if(confirm("Apagar todo o histórico deste navegador?")){await hStore("readwrite",s=>s.clear());renderHist()}};
+
 async function calc(){
   $("go").disabled=true;$("msg").textContent="Calculando…";const ded=$("ded").checked;
   for(const d of docs){
@@ -163,7 +187,8 @@ async function calc(){
       }
     }catch(e){d.err=e.message+" (se for erro de rede/CORS, use um servidor intermediário)"}
   }
-  $("msg").textContent="";$("go").disabled=false;$("csv").disabled=false;render();
+  for(const d of docs)if(d.itens.some(i=>i.cbs!==undefined||i.erros?.length))await hSave(d);
+  $("msg").textContent="";$("go").disabled=false;$("csv").disabled=false;render();renderHist();
 }
 $("go").onclick=calc;
 
@@ -199,6 +224,10 @@ $("csv").onclick=()=>{
   docs.forEach(d=>d.itens.forEach(i=>l.push([TIPO[d.tp][0],d.nf,i.n,i.cod,baseOf(d,i).toFixed(2),i.cst,i.cc,(i.cbs||0).toFixed(2),(i.ibs||0).toFixed(2),(i.erros||[]).map(e=>e.detail||e.title).join(" | ")||"OK"])));
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+l.map(r=>r.join(";")).join("\n")],{type:"text/csv"}));a.download="cbs-ibs.csv";a.click();
 };
+renderHist();
+function setTema(t){const r=document.documentElement;t==="auto"?r.removeAttribute("data-tema"):r.dataset.tema=t;try{localStorage.setItem("tema",t)}catch{}document.querySelectorAll("#tema button").forEach(b=>b.classList.toggle("on",b.dataset.t===t))}
+document.querySelectorAll("#tema button").forEach(b=>b.onclick=()=>setTema(b.dataset.t));
+let tm="auto";try{tm=localStorage.getItem("tema")||"auto"}catch{}setTema(tm);
 </script>
 </body>
 </html>
