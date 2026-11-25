@@ -43,7 +43,7 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
 <main>
 <div class="tema" id="tema" role="group" aria-label="Tema"><button data-t="auto">Auto</button><button data-t="escuro">Escuro</button><button data-t="claro">Claro</button></div>
 <h1>Calcular CBS e IBS pelo XML</h1>
-<p class="sub">1. Envie os XMLs · 2. Clique em Calcular · 3. Confira valores, reduções e validação de cada item.</p>
+<p class="sub">1. Envie os XMLs · 2. O cálculo é iniciado automaticamente · 3. Confira valores, reduções e validação de cada item.</p>
 
 <div class="card">
   <div id="drop"><b>Arraste os XMLs aqui ou clique para escolher</b>NF-e, NFC-e, NFS-e (padrão nacional) e CT-e. Pode enviar vários de uma vez.<input id="file" type="file" accept=".xml,text/xml" multiple hidden></div>
@@ -53,7 +53,7 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
     <button id="apply">Aplicar</button>
     <label class="c"><input type="checkbox" id="ded" checked onchange="render()"> Excluir ICMS, ISS, PIS e COFINS da base (LC 214/2025, art. 12, §2º, V — vale de 2026 a 2032)</label>
   </div>
-  <div class="bar"><button class="p" id="go" disabled>Calcular</button><button id="csv" disabled>Baixar CSV</button><span class="note" id="msg"></span></div>
+  <div class="bar"><button class="p" id="go" disabled>Recalcular</button><button id="csv" disabled>Baixar CSV</button><span class="note" id="msg"></span></div>
   <datalist id="cl"></datalist>
 </div>
 
@@ -68,8 +68,15 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
 <p class="note">Os XMLs são lidos no seu navegador e o histórico fica salvo só nele (você pode apagar quando quiser); só NCM/NBS, valores, UF e município seguem para a calculadora da Receita Federal (versão beta/piloto). Cálculo conforme a Lei Complementar 214/2025 (alterada pela LC 227/2026), com regras e tabelas da calculadora oficial da Receita Federal. Base de cálculo: valor da operação (art. 12), com frete, seguro, taxas e outras despesas, sem descontos incondicionais, IPI e IBS/CBS; o Imposto Seletivo integra a base. Resultado é estimativa e não substitui orientação fiscal. CST e cClassTrib vêm do XML quando existirem; senão usamos 000/000001 (tributação integral). Altere na tabela para simular benefícios e reduções.</p>
 </main>
 <script>
-// Se a API bloquear chamadas do navegador (CORS), aponte para o seu servidor intermediário.
-const API="https://piloto-cbs.tributos.gov.br/servico/calculadora-consumo/api/calculadora";
+// GitHub Pages é estático: configure aqui a URL do Cloudflare Worker publicado
+// (ex.: https://calculadora-cbs-api.seuusuario.workers.dev/api).
+// O Worker incluído em cloudflare-worker/ encaminha as chamadas à API oficial.
+const API="https://SEU-WORKER.workers.dev/api";
+const API_CONFIGURADA=!API.includes("SEU-WORKER");
+async function apiFetch(path, options={}){
+  if(!API_CONFIGURADA) throw new Error("Servidor intermediário não configurado. Publique o Worker e informe sua URL na constante API do index.html.");
+  return fetch(API+path, options);
+}
 const $=id=>document.getElementById(id);
 const brl=n=>(Number(n)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -113,11 +120,13 @@ function parse(xml,name){
 
 async function load(files){
   docs=[];const bad=[];
-  for(const f of files){try{docs.push(parse(await f.text(),f.name))}catch(e){bad.push(f.name+": "+e.message)}}
+  for(const f of [...files]){try{docs.push(parse(await f.text(),f.name))}catch(e){bad.push(f.name+": "+e.message)}}
   $("msg").textContent=docs.length+" documento(s) carregado(s)"+(bad.length?" · ignorados: "+bad.join("; "):"");
   $("go").disabled=!docs.length;$("csv").disabled=true;render();
+  // Após a leitura do XML, inicia a validação/cálculo sem exigir clique adicional.
+  if(docs.length) await calc();
 }
-$("drop").onclick=()=>$("file").click();$("file").onchange=e=>load(e.target.files);
+$("drop").onclick=()=>$("file").click();$("file").onchange=e=>{load(e.target.files);e.target.value=""};
 $("drop").ondragover=e=>{e.preventDefault();$("drop").classList.add("on")};
 $("drop").ondragleave=()=>$("drop").classList.remove("on");
 $("drop").ondrop=e=>{e.preventDefault();$("drop").classList.remove("on");load(e.dataTransfer.files)};
@@ -128,7 +137,7 @@ window.chg=(a,b,k,v)=>{const i=docs[a].itens[b];k==="cc"?setCC(i,v.trim()):i.cst
 
 // lista oficial de classificações (se a API responder neste formato; senão o campo fica livre)
 (async()=>{try{
-  const j=await(await fetch(API+"/dados-abertos/situacoes-tributarias/cbs-ibs")).json();
+  const j=await(await apiFetch("/dados-abertos/situacoes-tributarias/cbs-ibs")).json();
   const walk=(o,cst)=>{if(Array.isArray(o))return o.forEach(x=>walk(x,cst));if(o&&typeof o==="object"){
     const c=o.cst??o.CST??o.codigoSituacaoTributaria??cst,cc=o.cClassTrib??o.codigoClassificacaoTributaria;
     if(cc&&String(cc).length===6)CL[cc]={cst:c!=null?String(c).padStart(3,"0"):"",d:o.descricaoClassTrib||o.descricao||o.nome||""};
@@ -139,7 +148,7 @@ window.chg=(a,b,k,v)=>{const i=docs[a].itens[b];k==="cc"?setCC(i,v.trim()):i.cst
 fetch("data/meta.json").then(r=>r.json()).then(m=>{if(m.atualizadoEm)$("upd").textContent=" · tabelas de "+new Date(m.atualizadoEm).toLocaleDateString("pt-BR")}).catch(()=>{});
 const find=(o,k)=>{if(o&&typeof o==="object"){if(k in o&&typeof o[k]!=="object")return o[k];for(const v of Object.values(o)){const r=find(v,k);if(r!==undefined)return r}}};
 const grab=(o,k,out=[])=>{if(o&&typeof o==="object"){for(const[a,v]of Object.entries(o)){if(a===k&&Array.isArray(v))out.push(...v);else grab(v,k,out)}}return out};
-async function post(p,b){const r=await fetch(API+p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});return{s:r.status,ok:r.ok,j:await r.json().catch(()=>({}))}}
+async function post(p,b){const r=await apiFetch(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});return{s:r.status,ok:r.ok,j:await r.json().catch(()=>({}))}}
 
 // LC 214/2025, art. 12: valor da operação (frete, seguro, taxas e outras despesas entram); não entram IPI, IBS/CBS e descontos incondicionais;
 // ICMS, ISS, PIS e Cofins saem da base de 2026 a 2032 (§2º, V); o Imposto Seletivo integra a base.
@@ -193,7 +202,7 @@ async function calc(){
 $("go").onclick=calc;
 
 window.valida=async a=>{const d=docs[a];$("v"+a).textContent="Validando…";
-  try{const r=await fetch(`${API}/xml/validate?tipo=${TIPO[d.tp][1]}&subtipo=nota`,{method:"POST",headers:{"Content-Type":"application/xml"},body:d.xml});
+  try{const r=await apiFetch(`/xml/validate?tipo=${TIPO[d.tp][1]}&subtipo=nota`,{method:"POST",headers:{"Content-Type":"application/xml"},body:d.xml});
     $("v"+a).textContent=r.status+" "+(await r.text()).slice(0,4000)}catch(e){$("v"+a).textContent="Falha: "+e.message}};
 
 function render(){

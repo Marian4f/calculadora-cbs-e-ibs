@@ -10,3 +10,6 @@ e grava as tabelas oficiais em `data/`. O arquivo `data/meta.json` registra a da
 ## Fontes
 LC 214/2025 (atualizada até a LC 227/2026) · calculadora e API de dados abertos da Receita Federal ·
 notas técnicas da NF-e e da NFS-e. Os links estão no rodapé do site.
+
+## Publicação no GitHub Pages e integração da API
+O cálculo automático após a importação está habilitado. Como o GitHub Pages não executa servidor, publique o Worker em `cloudflare-worker/` e configure a constante `API` no `index.html`. Siga `CONFIGURAR-CLOUDFLARE.md`.
