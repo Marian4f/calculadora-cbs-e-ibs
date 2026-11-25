@@ -71,7 +71,7 @@ details{margin-top:10px}pre{background:var(--bg);border:1px solid var(--line);bo
 // GitHub Pages é estático: configure aqui a URL do Cloudflare Worker publicado
 // (ex.: https://calculadora-cbs-api.seuusuario.workers.dev/api).
 // O Worker incluído em cloudflare-worker/ encaminha as chamadas à API oficial.
-const API="https://SEU-WORKER.workers.dev/api";
+const API="https://calculadora-cbs-api.mf485725.workers.dev/api";
 const API_CONFIGURADA=!API.includes("SEU-WORKER");
 async function apiFetch(path, options={}){
   if(!API_CONFIGURADA) throw new Error("Servidor intermediário não configurado. Publique o Worker e informe sua URL na constante API do index.html.");
