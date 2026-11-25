@@ -1,0 +1,7 @@
+name = "calculadora-cbs-api"
+main = "worker.js"
+compatibility_date = "2026-11-25"
+
+# Recomendado: configure ALLOWED_ORIGIN no painel do Cloudflare como
+# https://SEU-USUARIO.github.io (ou a URL exata do seu GitHub Pages).
+# Se não configurar, o Worker aceita qualquer origem (CORS *).
