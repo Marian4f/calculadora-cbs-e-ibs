@@ -1,1 +1,1 @@
-{"ambiente":"apr","dataVersaoDb":"2026-11-09","descricaoVersaoApp":"1.7.2-0d9b30c1","descricaoVersaoDb":"Nova tabela de Classificações Tributárias (IT 2025.002 v.1.71), publicada em 30/10/2026.","versaoApp":"1.7.2-0d9b30c1","versaoDb":"V0073"}
+{"ambiente":"apr","dataVersaoDb":"2026-11-26","descricaoVersaoApp":"1.7.3-a286b4b3","descricaoVersaoDb":"Ajusta as vigências das tabelas CLASSIF_NBS_INDOP_LC e INDICADOR_OPERACAO_IBS_CBS.","versaoApp":"1.7.3-a286b4b3","versaoDb":"V0074"}
